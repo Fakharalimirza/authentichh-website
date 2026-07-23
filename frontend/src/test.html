@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Test page works</h1>
+  <script>
+    fetch('/src/main.jsx')
+      .then(r => r.text())
+      .then(t => {
+        document.body.innerHTML += '<p>main.jsx loaded (' + t.length + ' chars)</p>';
+        // Check if JSX imports resolve
+        if (t.includes('App')) {
+          document.body.innerHTML += '<p>✅ App import found</p>';
+        }
+      })
+      .catch(e => document.body.innerHTML += '<p>❌ Error: ' + e.message + '</p>');
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+backend/uploads/properties/*
+backend/uploads/gallery/*
+!backend/uploads/properties/.gitkeep
+!backend/uploads/gallery/.gitkeep
+*.log
+.DS_Store
+Thumbs.db
