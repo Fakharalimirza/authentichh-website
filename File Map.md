@@ -274,3 +274,8 @@ files: []
 | `database/seed-communities.js` | 248 communities across 9 Dubai sectors |
 | `database/seed-articles.js` | 9 area articles with cross-links |
 | `database/seed-properties.js` | Property seed data |
+
+---
+
+### Related
+- [[Document Fields]], [[Database]], [[Backend API]], [[Admin Panel]], [[OCR System]], [[🏠 Home]]

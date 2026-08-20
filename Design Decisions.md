@@ -274,4 +274,4 @@ url.startsWith('http') ? url : `/${url}`;
 **Why**: Documents are now managed at the unit/landlord level (AdminUnits, AdminLandlords) with OCR scanning. Including them in the property wizard created confusion about where documents live. Properties link to units via `unit_id`, and documents belong to units/landlords.
 
 ### Related
-- [[File Map]], [[Units & Listings]], [[OCR System]]
+- [[File Map]], [[Units & Listings]], [[OCR System]], [[🏠 Home]]

@@ -90,4 +90,4 @@ files: ["frontend/src/App.jsx", "frontend/src/pages/public/", "frontend/src/page
 - `SearchableSelect.jsx` — Location autocomplete in search form
 
 ### Related
-- [[File Map]], [[Admin Panel]], [[Component Library]], [[Design Decisions]]
+- [[File Map]], [[Admin Panel]], [[Component Library]], [[Design Decisions]], [[🏠 Home]]

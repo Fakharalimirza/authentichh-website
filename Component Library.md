@@ -142,7 +142,7 @@ import { Badge } from '../components/public';
 
 ## DateRangePicker (`DateRangePicker.jsx`)
 
-> File: `frontend/src/components/DateRangePicker.jsx`
+> File: `frontend/src/components/shared/DateRangePicker.jsx`
 
 ### Props
 

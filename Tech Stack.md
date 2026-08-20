@@ -117,4 +117,4 @@ files: ["frontend/package.json", "backend/package.json"]
 | Google Gemini | Free tier (15 rpm, 1M tokens/day) — complex doc structuring |
 
 ### Related
-- [[File Map]], [[Database]], [[Setup & Commands]]
+- [[File Map]], [[Database]], [[Setup & Commands]], [[🏠 Home]]
