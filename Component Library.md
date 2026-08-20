@@ -274,7 +274,7 @@ Google Maps embeds.
 
 > File: `frontend/src/components/public/PropertyEnquiryCard.jsx`
 
-Sticky enquiry form card shown on property detail pages. Submits via `POST /api/property-enquiries` (public route). Includes check-in/check-out via [[DateRangePicker]], guest count, and WhatsApp fallback link.
+Sticky enquiry form card shown on property detail pages. Submits via `POST /api/property-enquiries` (public route). Includes check-in/check-out via `DateRangePicker`, guest count, and WhatsApp fallback link.
 
 ---
 
