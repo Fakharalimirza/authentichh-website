@@ -19,7 +19,7 @@ files: ["backend/server.js", "backend/routes/", "backend/controllers/", "backend
 /api/property-enquiries  → enquiryRoutes (public)
 /api/contact             → contactRoutes (public)
 /api/reviews             → reviewsRoutes (public)
-/sitemap.xml             → static sitemap (frontend/public, Vite static)
+/sitemap.xml             → sitemapRoutes (dynamic, public pages + published properties/articles)
 
 /api/admin               → authRoutes (login, /me)
 /api/admin/properties    → propertyRoutes (admin, auth required)
@@ -104,7 +104,7 @@ Public routes skip auth. Admin routes use `authenticateToken` middleware. POST o
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | `{ status: 'ok', timestamp }` |
-| GET | `/sitemap.xml` | Static XML sitemap served from `frontend/public/sitemap.xml` (via Vite static hosting; public pages only — no admin paths) |
+| GET | `/sitemap.xml` | Dynamic XML sitemap (`backend/routes/sitemap.js` → `backend/controllers/sitemapController.js`): static public pages + published listings (public property pages `/apartments/:slug`, `listings.status = 'published'`) + published articles (`/areas/:slug`, `published = 1`). **No admin/private paths.** Also served at `/api/sitemap.xml`. `SITE_URL` env overrides the base URL. |
 
 ---
 

@@ -20,6 +20,7 @@ const landlordsRoutes = require('./routes/landlords');
 const unitsRoutes = require('./routes/units');
 const listingsRoutes = require('./routes/listings');
 const ocrRoutes = require('./routes/ocr');
+const sitemapRoutes = require('./routes/sitemap');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -77,6 +78,11 @@ app.use('/api/reviews', require('./routes/reviews'));
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Dynamic XML sitemap — public pages + published properties + published area articles.
+// Served at both /sitemap.xml (crawler-facing) and /api/sitemap.xml (internal/legacy).
+app.use('/', sitemapRoutes);
+app.use('/api', sitemapRoutes);
 
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

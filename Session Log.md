@@ -499,5 +499,29 @@ Everything working:
 
 ---
 
+# Session Log — August 20, 2026 (Part 2)
+
+> Dynamic XML sitemap + robots.txt hardening.
+
+## What changed
+
+- **robots.txt** (`frontend/public/robots.txt`): added `Disallow: /admin` and `Disallow: /api/` — crawlers are blocked from admin and API paths.
+- **Dynamic sitemap** (`backend/routes/sitemap.js` + `backend/controllers/sitemapController.js`): replaces the static-only sitemap. Served at **both** `/sitemap.xml` and `/api/sitemap.xml`. Queries:
+  - 8 static public pages (home, apartments, contact, about, list-your-property, facilities, terms, privacy)
+  - published listings → `/apartments/:slug` (`listings.status = 'published'`)
+  - published area articles → `/areas/:slug` (`area_articles.published = 1`)
+  - Includes `lastmod` from `updated_at`; XML-escapes slugs; `SITE_URL` env overrides the base URL. **No admin/private paths.**
+- **Mounted** in `server.js` via `app.use('/', sitemapRoutes)` + `app.use('/api', sitemapRoutes)`.
+- **Static fallback** `frontend/public/sitemap.xml` updated to match (added the published listing URL).
+- Docs: `Backend API.md` + `File Map.md` updated (note: public property pages come from the `listings` table since the units/listings split — there is no `properties` table in the current schema).
+
+## Verified
+
+- `GET /sitemap.xml` → 200, well-formed XML, 18 URLs (8 static + 1 listing + 9 articles), lastmod dates present, zero admin/private paths.
+- `GET /api/sitemap.xml` → 200 (same payload).
+- `node --check` passed on controller, route, server.
+
+---
+
 ### Related
 - [[master-task-list]], [[TEAM]], [[File Map]], [[🏠 Home]]

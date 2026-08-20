@@ -45,6 +45,7 @@ files: []
 | `/api/contact` | `backend/routes/contact.js` | Public contact form |
 | `/api/config` | `backend/routes/config.js` | Public config (maps API key) |
 | `/api/reviews` | `backend/routes/reviews.js` → `backend/controllers/reviewsController.js` | Google Reviews (cache + OAuth) |
+| `/sitemap.xml` + `/api/sitemap.xml` | `backend/routes/sitemap.js` → `backend/controllers/sitemapController.js` | Dynamic XML sitemap — static public pages + published listings (`listings.status = 'published'` → `/apartments/:slug`) + published area articles (`area_articles.published = 1`); excludes all admin/private paths; `SITE_URL` env overrides base URL; XML-escapes slugs |
 
 ## Backend — Utilities
 
