@@ -25,11 +25,13 @@ CREATE TABLE IF NOT EXISTS properties (
   bedrooms INT DEFAULT 0,
   bathrooms INT DEFAULT 0,
   max_guests INT DEFAULT 0,
+  parking_spots INT DEFAULT 0,
   size_sqft INT DEFAULT NULL,
   price_per_night DECIMAL(10,2) DEFAULT 0.00,
   short_description TEXT,
   description TEXT,
   map_url TEXT,
+  plus_code VARCHAR(50) DEFAULT NULL,
   latitude DECIMAL(10,8) DEFAULT NULL,
   longitude DECIMAL(11,8) DEFAULT NULL,
   status ENUM('draft', 'published', 'unpublished') DEFAULT 'draft',
@@ -135,5 +137,5 @@ INSERT INTO amenities (name, icon, description) VALUES
 ('Hair Dryer', 'hair', 'Hair dryer provided');
 
 -- Default admin user (password: admin123) - hash will be set by seed script
-INSERT INTO admin_users (name, email, password_hash, role) VALUES
+INSERT IGNORE INTO admin_users (name, email, password_hash, role) VALUES
 ('Admin', 'admin@authenticholidayhomes.ae', '', 'superadmin');

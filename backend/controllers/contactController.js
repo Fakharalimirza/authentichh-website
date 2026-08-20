@@ -1,5 +1,6 @@
 const pool = require('../config/db');
-const { sendEmail } = require('../utils/email');
+const { sendEmail, sendEmailToUser } = require('../utils/email');
+const { contactAdminTemplate, contactUserTemplate } = require('../utils/emailTemplates');
 
 exports.submit = async (req, res) => {
   try {
@@ -14,19 +15,11 @@ exports.submit = async (req, res) => {
       [name, email, phone || '', subject || '', message, 'new']
     );
 
-    const emailSubject = `New Contact Message - ${subject || 'No Subject'}`;
-    const html = `
-      <h2>New Contact Message</h2>
-      <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;max-width:600px">
-        <tr><td><strong>Name</strong></td><td>${name}</td></tr>
-        <tr><td><strong>Email</strong></td><td>${email}</td></tr>
-        <tr><td><strong>Phone</strong></td><td>${phone || 'N/A'}</td></tr>
-        <tr><td><strong>Subject</strong></td><td>${subject || 'N/A'}</td></tr>
-        <tr><td><strong>Message</strong></td><td>${message}</td></tr>
-      </table>
-    `;
+    const adminHtml = contactAdminTemplate({ name, email, phone: phone || '', subject: subject || '', message });
+    sendEmail({ subject: `New Contact Message - ${subject || 'No Subject'}`, html: adminHtml });
 
-    sendEmail({ subject: emailSubject, html });
+    const userHtml = contactUserTemplate({ name });
+    sendEmailToUser({ to: email, subject: 'Thank You for Contacting Us - Authentic Holiday Homes', html: userHtml });
 
     res.status(201).json({ message: 'Thank you for your message. We will get back to you soon.' });
   } catch (error) {
@@ -37,8 +30,27 @@ exports.submit = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const [messages] = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
-    res.json(messages);
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 25));
+    const offset = (page - 1) * limit;
+
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+    if (req.query.status) { whereClause += ' AND status = ?'; params.push(req.query.status); }
+    if (req.query.q) { whereClause += ' AND (name LIKE ? OR email LIKE ?)'; params.push(`%${req.query.q}%`, `%${req.query.q}%`); }
+    if (req.query.from) { whereClause += ' AND created_at >= ?'; params.push(req.query.from); }
+    if (req.query.to) { whereClause += ' AND created_at <= ?'; params.push(req.query.to + ' 23:59:59'); }
+
+    const countQuery = `SELECT COUNT(*) as total FROM contact_messages ${whereClause}`;
+    const [countResult] = await pool.query(countQuery, params);
+    const total = countResult[0].total;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    let query = `SELECT * FROM contact_messages ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    const queryParams = [...params, limit, offset];
+    const [messages] = await pool.query(query, queryParams);
+
+    res.json({ data: messages, pagination: { page, limit, total, totalPages } });
   } catch (error) {
     console.error('Get contact messages error:', error);
     res.status(500).json({ message: 'Server error' });

@@ -1,8 +1,10 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', 'backend', '.env') });
-const mysql = require('mysql2/promise');
-const bcrypt = require('bcryptjs');
-const fs = require('fs');
 const path = require('path');
+const backendModules = path.join(__dirname, '..', 'backend', 'node_modules');
+const req = require('module').createRequire(path.join(backendModules, 'package.json'));
+req('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') });
+const mysql = req('mysql2/promise');
+const bcrypt = req('bcryptjs');
+const fs = require('fs');
 
 async function seed() {
   const connection = await mysql.createConnection({

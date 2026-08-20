@@ -1,45 +1,41 @@
 const pool = require('../config/db');
-const { sendEmail } = require('../utils/email');
+const { sendEmail, sendEmailToUser } = require('../utils/email');
+const { landlordAdminTemplate, landlordUserTemplate } = require('../utils/emailTemplates');
 
 exports.submit = async (req, res) => {
   try {
-    const {
-      full_name, phone, email, property_location, building_name,
-      unit_number, property_type, bedrooms, furnishing_status, description, message
-    } = req.body;
+    const { full_name, phone_email, message } = req.body;
 
-    if (!full_name || !phone || !email || !property_location || !property_type) {
-      return res.status(400).json({ message: 'Required fields: full_name, phone, email, property_location, property_type' });
+    if (!full_name || !phone_email) {
+      return res.status(400).json({ message: 'Required fields: full_name, phone_email' });
     }
+
+    // Parse phone_email: determine if it's a phone or email
+    const isEmail = phone_email.includes('@');
+    const phone = isEmail ? null : phone_email;
+    const email = isEmail ? phone_email : null;
 
     const [result] = await pool.query(
       `INSERT INTO landlord_requests (full_name, phone, email, property_location, building_name,
         unit_number, property_type, bedrooms, furnishing_status, description, message, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')`,
-      [full_name, phone, email, property_location, building_name || '',
-       unit_number || '', property_type, bedrooms || 0, furnishing_status || 'furnished',
-       description || '', message || '']
+      [full_name, phone, email, null, '',
+       '', null, 0, 'furnished',
+       '', message || '']
     );
 
-    const subject = `New Landlord Property Listing Request - ${property_location}`;
-    const html = `
-      <h2>New Landlord Property Listing Request</h2>
-      <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;max-width:600px">
-        <tr><td><strong>Name</strong></td><td>${full_name}</td></tr>
-        <tr><td><strong>Phone</strong></td><td>${phone}</td></tr>
-        <tr><td><strong>Email</strong></td><td>${email}</td></tr>
-        <tr><td><strong>Property Location</strong></td><td>${property_location}</td></tr>
-        <tr><td><strong>Building Name</strong></td><td>${building_name || 'N/A'}</td></tr>
-        <tr><td><strong>Unit Number</strong></td><td>${unit_number || 'N/A'}</td></tr>
-        <tr><td><strong>Property Type</strong></td><td>${property_type}</td></tr>
-        <tr><td><strong>Bedrooms</strong></td><td>${bedrooms || 0}</td></tr>
-        <tr><td><strong>Furnishing</strong></td><td>${furnishing_status || 'N/A'}</td></tr>
-        <tr><td><strong>Description</strong></td><td>${description || 'N/A'}</td></tr>
-        <tr><td><strong>Message</strong></td><td>${message || 'N/A'}</td></tr>
-      </table>
-    `;
+    const adminHtml = landlordAdminTemplate({
+      fullName: full_name, email: email || 'N/A', phone: phone || 'N/A', propertyLocation: 'Not specified',
+      buildingName: '', unitNumber: '', propertyType: 'Not specified',
+      bedrooms: 0, furnishingStatus: 'furnished',
+      description: '', userMessage: message || '',
+    });
+    sendEmail({ subject: `New Landlord Request - ${full_name}`, html: adminHtml });
 
-    sendEmail({ subject, html });
+    if (email) {
+      const userHtml = landlordUserTemplate({ fullName: full_name });
+      sendEmailToUser({ to: email, subject: 'Thank You for Your Submission - Authentic Holiday Homes', html: userHtml });
+    }
 
     res.status(201).json({
       message: 'Thank you for your interest in listing your property with Authentic Holiday Homes. Our team has received your request and will contact you to discuss the details.'
@@ -52,7 +48,14 @@ exports.submit = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const [requests] = await pool.query('SELECT * FROM landlord_requests ORDER BY created_at DESC');
+    let query = 'SELECT * FROM landlord_requests WHERE 1=1';
+    const params = [];
+    if (req.query.status) { query += ' AND status = ?'; params.push(req.query.status); }
+    if (req.query.q) { query += ' AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)'; params.push(`%${req.query.q}%`, `%${req.query.q}%`, `%${req.query.q}%`); }
+    if (req.query.from) { query += ' AND created_at >= ?'; params.push(req.query.from); }
+    if (req.query.to) { query += ' AND created_at <= ?'; params.push(req.query.to + ' 23:59:59'); }
+    query += ' ORDER BY created_at DESC';
+    const [requests] = await pool.query(query, params);
     res.json(requests);
   } catch (error) {
     console.error('Get landlord requests error:', error);

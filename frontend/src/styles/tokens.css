@@ -21,6 +21,7 @@
   --color-surface-secondary: #F5F5F5;
   --color-surface-tertiary: #EEEEEE;
   --color-elevated: #FFFFFF;
+  --color-white: #FFFFFF;
 
   --color-text: #1A1A1A;
   --color-text-secondary: #555555;
@@ -226,6 +227,7 @@ html {
 }
 
 body {
+  margin: 0;
   font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: var(--leading-normal);

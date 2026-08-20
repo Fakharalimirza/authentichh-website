@@ -1,5 +1,6 @@
 const pool = require('../config/db');
-const { sendEmail } = require('../utils/email');
+const { sendEmail, sendEmailToUser } = require('../utils/email');
+const { enquiryAdminTemplate, enquiryUserTemplate } = require('../utils/emailTemplates');
 
 exports.submit = async (req, res) => {
   try {
@@ -17,25 +18,20 @@ exports.submit = async (req, res) => {
       [property_id, name, enquiryEmail, phone, check_in || null, check_out || null, guests || 0, message || '']
     );
 
-    const [properties] = await pool.query('SELECT title FROM properties WHERE id = ?', [property_id]);
+    const [properties] = await pool.query('SELECT title FROM units WHERE id = ?', [property_id]);
     const propertyName = properties.length > 0 ? properties[0].title : 'Unknown Property';
 
-    const subject = `New Property Enquiry - ${propertyName}`;
-    const html = `
-      <h2>New Property Enquiry</h2>
-      <table border="1" cellpadding="8" style="border-collapse:collapse;width:100%;max-width:600px">
-        <tr><td><strong>Property</strong></td><td>${propertyName}</td></tr>
-        <tr><td><strong>Name</strong></td><td>${name}</td></tr>
-        <tr><td><strong>Email</strong></td><td>${email}</td></tr>
-        <tr><td><strong>Phone</strong></td><td>${phone}</td></tr>
-        <tr><td><strong>Check-in</strong></td><td>${check_in || 'N/A'}</td></tr>
-        <tr><td><strong>Check-out</strong></td><td>${check_out || 'N/A'}</td></tr>
-        <tr><td><strong>Guests</strong></td><td>${guests || 0}</td></tr>
-        <tr><td><strong>Message</strong></td><td>${message || 'N/A'}</td></tr>
-      </table>
-    `;
+    const adminHtml = enquiryAdminTemplate({
+      name, email: enquiryEmail, phone, propertyName,
+      checkIn: check_in || 'N/A', checkOut: check_out || 'N/A',
+      guests: guests || 0, message: message || '',
+    });
+    sendEmail({ subject: `New Enquiry - ${propertyName}`, html: adminHtml });
 
-    sendEmail({ subject, html });
+    if (email) {
+      const userHtml = enquiryUserTemplate({ name, propertyName, checkIn: check_in, checkOut: check_out });
+      sendEmailToUser({ to: email, subject: 'Thank You for Your Enquiry - Authentic Holiday Homes', html: userHtml });
+    }
 
     res.status(201).json({ message: 'Thank you for your enquiry. We will contact you shortly.' });
   } catch (error) {
@@ -46,13 +42,32 @@ exports.submit = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const [enquiries] = await pool.query(
-      `SELECT e.*, p.title as property_name 
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit, 10) || 25));
+    const offset = (page - 1) * limit;
+
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+    if (req.query.status) { whereClause += ' AND e.status = ?'; params.push(req.query.status); }
+    if (req.query.q) { whereClause += ' AND (e.name LIKE ? OR e.email LIKE ? OR e.phone LIKE ?)'; params.push(`%${req.query.q}%`, `%${req.query.q}%`, `%${req.query.q}%`); }
+    if (req.query.from) { whereClause += ' AND e.created_at >= ?'; params.push(req.query.from); }
+    if (req.query.to) { whereClause += ' AND e.created_at <= ?'; params.push(req.query.to + ' 23:59:59'); }
+
+    const countQuery = `SELECT COUNT(*) as total FROM property_enquiries e ${whereClause}`;
+    const [countResult] = await pool.query(countQuery, params);
+    const total = countResult[0].total;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+
+    let query = `SELECT e.*, p.title as property_name 
        FROM property_enquiries e 
-       LEFT JOIN properties p ON e.property_id = p.id 
-       ORDER BY e.created_at DESC`
-    );
-    res.json(enquiries);
+       LEFT JOIN units p ON e.property_id = p.id 
+       ${whereClause}
+       ORDER BY e.created_at DESC
+       LIMIT ? OFFSET ?`;
+    const queryParams = [...params, limit, offset];
+    const [enquiries] = await pool.query(query, queryParams);
+
+    res.json({ data: enquiries, pagination: { page, limit, total, totalPages } });
   } catch (error) {
     console.error('Get enquiries error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -67,7 +82,7 @@ exports.updateStatus = async (req, res) => {
     const [enquiry] = await pool.query(
       `SELECT e.*, p.title as property_name 
        FROM property_enquiries e 
-       LEFT JOIN properties p ON e.property_id = p.id 
+       LEFT JOIN units p ON e.property_id = p.id 
        WHERE e.id = ?`, [id]
     );
     res.json(enquiry[0]);

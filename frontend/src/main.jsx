@@ -1,12 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import App from './App';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { ToastProvider } from './components/ui/Toast';
+import { FavoritesProvider } from './context/FavoritesContext';
+import { I18nProvider } from './i18n/I18nContext';
+import { ToastProvider } from './components/public/Toast';
 import './styles/tokens.css';
-import './styles/components.css';
-import './styles/global.css';
+import './styles/shared.css';
+import './styles/public/public-components.css';
+import './styles/public/public-pages.css';
 
 const root = document.getElementById('root');
 
@@ -21,12 +25,18 @@ if (root) {
   root.style.display = 'contents';
   ReactDOM.createRoot(root).render(
     <React.StrictMode>
-      <BrowserRouter>
-        <ThemeProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </ThemeProvider>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <HelmetProvider>
+          <ThemeProvider>
+            <I18nProvider>
+              <ToastProvider>
+                <FavoritesProvider>
+                  <App />
+                </FavoritesProvider>
+              </ToastProvider>
+            </I18nProvider>
+          </ThemeProvider>
+        </HelmetProvider>
       </BrowserRouter>
     </React.StrictMode>
   );

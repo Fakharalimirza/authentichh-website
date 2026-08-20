@@ -1,98 +1,230 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, X, Eye } from 'lucide-react';
 import { adminApi } from '../../utils/api';
-import AdminSidebar from '../../components/AdminSidebar';
-import Button from '../../components/ui/Button';
-import Badge from '../../components/ui/Badge';
+import Button from '../../components/public/Button';
+import Badge from '../../components/public/Badge';
+import { useAdminToast } from '../../hooks/useAdminToast';
+import AdminTablePage from '../../components/admin/AdminTablePage';
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'All Statuses' },
+  { value: 'new', label: 'New' },
+  { value: 'read', label: 'Read' },
+  { value: 'closed', label: 'Closed' },
+];
+
+function statusVariant(s) {
+  const map = { new: 'accent', read: 'primary', closed: 'default' };
+  return map[s] || 'default';
+}
 
 export default function AdminContactMessages() {
   const [messages, setMessages] = useState([]);
-  const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [perPage, setPerPage] = useState(25);
+  const toast = useAdminToast();
 
-  const fetch = () => {
-    adminApi.get('/contact-messages')
-      .then(r => setMessages(r.data))
-      .catch(() => navigate('/admin/login'))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { fetch(); }, []);
-
-  const updateStatus = async (id, status) => {
+  const fetchMessages = useCallback(async () => {
+    setLoading(true);
     try {
-      await adminApi.put(`/contact-messages/${id}/status`, { status });
-      fetch();
-      if (selected && selected.id === id) setSelected(null);
-    } catch (err) {
-      alert('Failed to update status');
+      const params = { page, limit: perPage };
+      if (search) params.q = search;
+      if (status) params.status = status;
+      const res = await adminApi.get('/contact-messages', { params });
+      setMessages(res.data.data);
+      setTotal(res.data.pagination.total);
+      setTotalPages(res.data.pagination.totalPages);
+    } catch {
+      toast.error('Failed to load contact messages');
+    } finally {
+      setLoading(false);
+    }
+  }, [search, status, page, perPage]);
+
+  useEffect(() => {
+    fetchMessages();
+  }, [fetchMessages]);
+
+  const updateStatus = async (id, newStatus) => {
+    try {
+      await adminApi.put(`/contact-messages/${id}/status`, { status: newStatus });
+      toast.success(`Message marked as ${newStatus}`);
+      fetchMessages();
+      if (selected && selected.id === id) {
+        setSelected({ ...selected, status: newStatus });
+      }
+    } catch {
+      toast.error('Failed to update status');
     }
   };
 
+  const openPanel = (m) => {
+    setSelected(m);
+    setPanelOpen(true);
+    if (m.status === 'new') {
+      updateStatus(m.id, 'read');
+    }
+  };
+
+  const closePanel = () => {
+    setPanelOpen(false);
+    setTimeout(() => setSelected(null), 300);
+  };
+
   return (
-    <div className="admin-layout">
-      <AdminSidebar />
-      <div className="admin-main">
-        <div className="admin-header"><h1>Contact Messages</h1></div>
+    <>
+      <AdminTablePage
+        title="Contact Messages"
+        loading={loading}
+        items={messages}
+        rowKey="id"
+        columns={[
+          { label: 'Date', render: (m) => new Date(m.created_at).toLocaleDateString() },
+          { label: 'Name', render: (m) => <span className="font-medium">{m.name}</span> },
+          { label: 'Email', render: (m) => m.email },
+          { label: 'Subject', render: (m) => m.subject || '-' },
+          { label: 'Status', render: (m) => <Badge variant={statusVariant(m.status)} size="sm">{m.status}</Badge> },
+          {
+            label: 'Action',
+            render: (m) => (
+              <Button variant="ghost" size="sm" onClick={() => openPanel(m)}>
+                <Eye size={14} />
+                <span>View</span>
+              </Button>
+            ),
+          },
+        ]}
+        search={{
+          value: search,
+          placeholder: 'Search by name, email, or subject...',
+          onChange: (v) => { setSearch(v); setPage(1); },
+        }}
+        filters={[
+          {
+            label: 'Status',
+            placeholder: 'All Statuses',
+            value: status,
+            onChange: (v) => { setStatus(v); setPage(1); },
+            options: STATUS_OPTIONS.slice(1),
+          },
+        ]}
+        empty={{
+          icon: <Search size={28} />,
+          title: 'No contact messages yet',
+          hint: 'Messages from the contact form will appear here.',
+        }}
+        mobileCard={(m) => ({
+          title: m.name || 'Unknown',
+          subtitle: m.subject || '',
+          meta: [
+            m.email && { label: '', value: m.email },
+          ].filter(Boolean),
+          status: { label: m.status, variant: m.status === 'new' ? 'accent' : m.status === 'read' ? 'primary' : 'default' },
+          actions: [
+            { icon: Eye, label: 'View', onClick: () => openPanel(m) },
+          ],
+          onClick: () => openPanel(m),
+        })}
+        pagination={{
+          page,
+          totalPages,
+          total,
+          perPage,
+          onPerPageChange: (n) => { setPerPage(n); setPage(1); },
+          onChange: setPage,
+        }}
+      />
 
+      {/* Slide Panel */}
+      <div
+        className={`slide-panel-backdrop${panelOpen ? ' open' : ''}`}
+        onClick={closePanel}
+      />
+      <div className={`slide-panel${panelOpen ? ' open' : ''}`}>
         {selected && (
-          <div style={{
-            background: 'var(--color-surface)', borderRadius: 12, padding: 30,
-            marginBottom: 30, border: '1px solid var(--color-border)',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+          <>
+            <div className="slide-panel-header">
               <h2>{selected.subject || 'No Subject'}</h2>
-              <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close</Button>
+              <button type="button" className="modal-close" onClick={closePanel}>
+                <X size={20} />
+              </button>
             </div>
-            <div style={{ marginBottom: 20 }}>
-              <div><strong>From:</strong> {selected.name} ({selected.email})</div>
-              <div><strong>Phone:</strong> {selected.phone || 'N/A'}</div>
-              <div><strong>Date:</strong> {new Date(selected.created_at).toLocaleString()}</div>
-              <div><strong>Status:</strong> <Badge variant={selected.status === 'new' ? 'accent' : selected.status === 'read' ? 'primary' : 'default'} size="sm">{selected.status}</Badge></div>
-            </div>
-            <div style={{
-              padding: 20, background: 'var(--color-bg)', borderRadius: 8, lineHeight: 1.8,
-              color: 'var(--color-text)',
-            }}>{selected.message}</div>
-            <div style={{ marginTop: 15, display: 'flex', gap: 8 }}>
-              <Button variant="ghost" size="sm" onClick={() => { updateStatus(selected.id, 'read'); setSelected({...selected, status: 'read'}); }}>Mark as Read</Button>
-              <Button variant="outline" size="sm" onClick={() => updateStatus(selected.id, 'closed')}>Close</Button>
-            </div>
-          </div>
-        )}
 
-        <div className="admin-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Subject</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: 40 }}>Loading...</td></tr>
-              ) : messages.length === 0 ? (
-                <tr><td colSpan="6" style={{ textAlign: 'center', padding: 40 }}>No contact messages yet.</td></tr>
-              ) : messages.map(m => (
-                <tr key={m.id}>
-                  <td>{new Date(m.created_at).toLocaleDateString()}</td>
-                  <td style={{ fontWeight: 500 }}>{m.name}</td>
-                  <td>{m.email}</td>
-                  <td>{m.subject || '-'}</td>
-                  <td><Badge variant={m.status === 'new' ? 'accent' : m.status === 'read' ? 'primary' : 'default'} size="sm">{m.status}</Badge></td>
-                  <td><Button variant="ghost" size="sm" onClick={() => { setSelected(m); if (m.status === 'new') updateStatus(m.id, 'read'); }}>View</Button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <div className="text-sm text-muted mb-1">From</div>
+                  <div className="text-sm font-medium">{selected.name}</div>
+                  <div className="text-xs text-muted">{selected.email}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted mb-1">Phone</div>
+                  <div className="text-sm font-medium">{selected.phone || 'N/A'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted mb-1">Date</div>
+                  <div className="text-sm font-medium">
+                    {new Date(selected.created_at).toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted mb-1">Status</div>
+                  <div>
+                    <Badge variant={statusVariant(selected.status)} size="sm">
+                      {selected.status}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <div className="text-sm font-semibold mb-2">Message</div>
+              <div
+                className="text-sm leading-relaxed p-4"
+                style={{
+                  background: 'var(--color-bg)',
+                  borderRadius: 'var(--radius-md)',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.8,
+                }}
+              >
+                {selected.message}
+              </div>
+            </div>
+
+            <div className="divider mb-6" />
+
+            <div className="flex gap-3">
+              {selected.status !== 'read' && selected.status !== 'closed' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => updateStatus(selected.id, 'read')}
+                >
+                  Mark as Read
+                </Button>
+              )}
+              {selected.status !== 'closed' && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => updateStatus(selected.id, 'closed')}
+                >
+                  Close
+                </Button>
+              )}
+            </div>
+          </>
+        )}
       </div>
-    </div>
+    </>
   );
 }

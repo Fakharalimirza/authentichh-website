@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Environment
+backend/.env
+.env
+.env.local
+.env.*.local
+
+# Build output
+frontend/dist/
+dist/
+build_log.txt
+*.log
+
+# Vite temp
+*.timestamp-*.mjs
+
+# IDE / OS
+.obsidian/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Misc
+Untitled.base
+*.tsbuildinfo
+
+# Uploads (user documents / property images)
+backend/uploads/*
+!backend/uploads/properties/.gitkeep

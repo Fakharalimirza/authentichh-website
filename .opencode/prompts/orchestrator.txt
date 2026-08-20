@@ -1,0 +1,95 @@
+## Project
+Authentic Holiday Homes — Dubai luxury holiday homes site.
+
+**Stack:** React 18 + Vite 5 frontend, Express + MySQL backend.
+**Styling:** Custom CSS only (no Tailwind). CSS variables in src/styles/index.css.
+**Carousels:** Swiper.js v14 with slidesPerView + breakpoints, loop, autoplay. Key: `centeredSlides={true}`, `slideToClickedSlide={true}`, odd slidesPerView at desktop (3, 5). Use `isActive` render prop on SwiperSlide for active styling (not manual comparisons). Never combine manual array duplication with `loopAdditionalSlides` (double-clone conflict). CSS: `.swiper-slide-active` / `:not(.swiper-slide-active)` for scale/opacity transitions; no `justify-content` on `.swiper-wrapper`.
+**Reviews:** Google Business Profile API (OAuth) with Places API fallback. Cached in MySQL reviews_cache table (7-day refresh).
+**SEO:** Dynamic sitemap, robots.txt, JSON-LD (Organization, LocalBusiness, ContactPage, BreadcrumbList, Article), Helmet meta/OG.
+**Google Place ID:** ChIJ5XUV4PtDXz4RRCLvZO620fo
+**Deployment:** cPanel VPS (Setup Node.js App, MySQL via phpMyAdmin, cron for review refresh).
+
+---
+
+## Workflow
+1. **KNOWLEDGE BASE FIRST**: Before any code changes, read `File Map.md` in the project root. It maps features → files → functions. Use it to find what to edit.
+2. Decompose each request into sub-agent tasks per domain (backend, frontend, CSS, DB, content)
+3. Spawn sub-agents in parallel when tasks are independent
+4. After all sub-agents complete, pass everything to the `reviewer` sub-agent
+5. Reviewer checks: `npm run build` passes, no lint errors, no broken imports, no console.logs, consistency with design system
+6. If reviewer reports issues → fix via sub-agents again, re-review
+7. If reviewer gives all-clear → report completion summary to the user
+
+*The `reviewer` sub-agent is the final gate. Never report "done" until reviewer passes.*
+
+---
+
+## Delegation rules
+
+| When | Action |
+|------|--------|
+| Simple single-file edit | Handle directly |
+| Single domain, multiple files | Handle directly or use 1 sub-agent |
+| Cross-domain work (e.g. backend + frontend + CSS) | One sub-agent per domain, parallel dispatch |
+| Code quality check before reporting | Always pass to `reviewer` last |
+
+---
+
+## Key project files
+
+### Frontend pages (src/pages/public/)
+- Home.jsx — hero image rotation, Swiper carousels (Featured, Areas, Reviews, Get In Touch), search form, facilities grid
+- Contact.jsx — contact form, contact cards, embedded Reviews component, Google Maps iframe
+- AreaArticle.jsx — dynamic article page at /areas/:slug, breadcrumb, reading progress, sidebar, FAQ, social share, JSON-LD, ring CTA
+- Apartments.jsx — property listing grid, filter sidebar/drawer, sort, mobile toggles
+- Facilities.jsx — full facilities list
+- About.jsx — about page
+- ListProperty.jsx — landlord submission form, consents, checkbox validation
+
+### Frontend components (src/components/)
+- public/Reviews.jsx — Google Reviews Swiper carousel with expand/close accordion, skeleton state
+- public/PropertyCard.jsx — card with image carousel, price, location, title, meta, favorite button
+- public/Button.jsx, Card.jsx, Badge.jsx — design system primitives (variants, sizes, hover states)
+- public/Skeleton.jsx — shimmer loading skeletons (PropertyCardSkeleton, etc.)
+- shared/Header.jsx — responsive header, mobile hamburger menu, location dropdown
+- shared/Footer.jsx — footer with WhatsApp SVG icon, links
+- shared/SearchableSelect.jsx — searchable dropdown for location autocomplete
+
+### Frontend styles (src/styles/)
+- public/public-components.css — all carousel, review, hero, card, facility, article, skeleton CSS
+- index.css — global reset, CSS custom properties, theme variables, shared utility classes
+
+### Backend (backend/)
+- server.js — Express app, Helmet CSP (lh3.googleusercontent.com whitelisted), CORS, static file serving, mounts /api/reviews, /api/sitemap.xml
+- routes/reviews.js — GET / (reviews), /avatar (proxy), /refresh, /auth, /auth/callback
+- routes/properties.js — GET /featured, CRUD routes
+- routes/communities.js — GET /public, CRUD routes
+- routes/articles.js — GET /public, CRUD routes
+- controllers/reviewsController.js — Places API fetch, Business Profile API (OAuth paginated, 5-star filter), MySQL cache read/write, avatar proxy
+- config/db.js — MySQL pool with promise wrapper
+- .env — DB_HOST/DB_USER/DB_PASS/DB_NAME, GOOGLE_PLACES_API_KEY, GOOGLE_CLIENT_ID/SECRET/REDIRECT_URI
+
+### Database (database/)
+- seed-communities.js — 248 communities across 9 Dubai sectors
+- seed-articles.js — 9 area articles with cross-links, structured HTML, /images/areas/*.jpg paths
+- migration-reviews-cache.sql — reviews_cache table (id, review_id, author_name, text, rating, time, profile_photo_url, relative_time_description, refresh_token, account_name, location_name, cached_at)
+
+### Admin (src/pages/admin/ + src/components/admin/)
+- pages/admin/Communities.jsx — communities CRUD dashboard (DataTable, form modal, delete)
+- pages/admin/Articles.jsx — articles CRUD dashboard (DataTable, form modal, delete)
+- components/admin/AdminLayout.jsx — sidebar + header shell, responsive collapse
+- components/admin/AdminSidebar.jsx — sidebar with navigation links
+
+---
+
+## Key conventions
+- **ALWAYS read `File Map.md` first** before any code changes — it maps features → files → functions
+- After adding/renaming files or functions, update `File Map.md`
+- Custom CSS in src/styles/public/ (one file per domain, never monolithic)
+- CSS variables: --color-primary (gold accent), --color-accent, --color-bg, --color-surface, etc.
+- API calls via src/utils/api.js (axios instance, base URL from env)
+- Responsive breakpoints: 374px, 639px, 767px, 1023px, 1100px, 1440px+
+- Property images: unsplash demo images in PropertyCard
+- WhatsApp icon: Bootstrap Icons SVG (bi bi-whatsapp)
+- All carousels use Swiper.js: slidesPerView numeric, breakpoints, loop, autoplay 3s, centeredSlides, observer
+- Google Reviews: 5-star filter, 7-day cache, OAuth for Business Profile API (15+ reviews), Places API fallback (5 max)

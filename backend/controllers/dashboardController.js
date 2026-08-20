@@ -2,9 +2,9 @@ const pool = require('../config/db');
 
 exports.getSummary = async (req, res) => {
   try {
-    const [totalProperties] = await pool.query('SELECT COUNT(*) as count FROM properties');
-    const [publishedProperties] = await pool.query("SELECT COUNT(*) as count FROM properties WHERE status = 'published'");
-    const [draftProperties] = await pool.query("SELECT COUNT(*) as count FROM properties WHERE status = 'draft'");
+    const [totalProperties] = await pool.query('SELECT COUNT(*) as count FROM units');
+    const [publishedProperties] = await pool.query("SELECT COUNT(*) as count FROM units WHERE status = 'published'");
+    const [draftProperties] = await pool.query("SELECT COUNT(*) as count FROM units WHERE status = 'draft'");
     const [totalEnquiries] = await pool.query('SELECT COUNT(*) as count FROM property_enquiries');
     const [newEnquiries] = await pool.query("SELECT COUNT(*) as count FROM property_enquiries WHERE status = 'new'");
     const [landlordRequests] = await pool.query('SELECT COUNT(*) as count FROM landlord_requests');

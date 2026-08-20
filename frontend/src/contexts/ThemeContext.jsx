@@ -1,7 +1,13 @@
+/**
+ * @fileoverview Theme context supporting light, dark, and system-preference modes.
+ * Persists choice to localStorage under 'ahf-theme'.
+ */
+
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 
 const ThemeContext = createContext(null);
 
+/** Read the user's saved preference or default to 'system'. */
 function getInitialTheme() {
   if (typeof window === 'undefined') return 'light';
   const stored = localStorage.getItem('ahf-theme');
@@ -9,16 +15,21 @@ function getInitialTheme() {
   return 'system';
 }
 
+/** Detect OS-level dark-mode preference. */
 function getSystemTheme() {
   if (typeof window === 'undefined') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+/** Resolve 'system' preference to actual light/dark value. */
 function resolveTheme(preference) {
   if (preference === 'system') return getSystemTheme();
   return preference;
 }
 
+/**
+ * Provides theme context. Listens to system preference changes when mode is 'system'.
+ */
 export function ThemeProvider({ children }) {
   const [preference, setPreference] = useState(getInitialTheme);
   const [theme, setTheme] = useState(() => resolveTheme(getInitialTheme()));
@@ -70,6 +81,7 @@ export function ThemeProvider({ children }) {
   );
 }
 
+/** Returns theme context — must be used within <ThemeProvider>. */
 export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider');

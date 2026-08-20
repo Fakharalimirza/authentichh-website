@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS area_articles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(100) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  subtitle TEXT,
+  content TEXT,
+  highlights JSON,
+  ideal_for VARCHAR(255),
+  why_in_demand TEXT,
+  image_url VARCHAR(500),
+  keywords VARCHAR(500),
+  published TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

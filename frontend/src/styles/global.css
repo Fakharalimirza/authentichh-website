@@ -200,169 +200,6 @@
   list-style: disc;
 }
 
-/* ─── Property Detail Carousel ────────────────────────────── */
-.detail-carousel {
-  display: grid;
-  grid-template-columns: 1fr 80px;
-  gap: 10px;
-  margin-bottom: var(--space-8);
-}
-
-/* Main image — left column */
-.detail-carousel-main {
-  position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  background: var(--color-surface-secondary);
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.detail-carousel-img {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  display: block;
-  cursor: pointer;
-  animation: pcardFadeIn 0.3s ease;
-}
-
-/* Thumbnails — right column */
-.detail-carousel-thumbs {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  max-height: min(60vh, 540px);
-  scrollbar-width: thin;
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.detail-carousel-thumbs::-webkit-scrollbar {
-  width: 4px;
-}
-.detail-carousel-thumbs::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
-}
-
-.detail-carousel-thumb {
-  flex: 0 0 auto;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid transparent;
-  padding: 0;
-  cursor: pointer;
-  background: var(--color-surface-secondary);
-  transition: border-color var(--duration-fast) var(--ease-out),
-              opacity var(--duration-fast) var(--ease-out);
-  opacity: 0.55;
-}
-
-.detail-carousel-thumb:hover {
-  opacity: 0.85;
-}
-
-.detail-carousel-thumb--active {
-  border-color: var(--color-primary);
-  opacity: 1;
-}
-
-.detail-carousel-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.detail-carousel-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease-out),
-              background var(--duration-fast) var(--ease-out),
-              transform var(--duration-fast) var(--ease-out);
-}
-
-.detail-carousel:hover .detail-carousel-arrow,
-.detail-carousel-main:hover .detail-carousel-arrow {
-  opacity: 1;
-}
-
-.detail-carousel-arrow--prev { inset-inline-start: 16px; }
-.detail-carousel-arrow--next { inset-inline-end: 16px; }
-
-.detail-carousel-arrow:hover {
-  background: rgba(0, 0, 0, 0.65);
-  transform: translateY(-50%) scale(1.08);
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .detail-carousel-arrow { opacity: 1; }
-}
-
-.detail-carousel-counter {
-  position: absolute;
-  bottom: 16px;
-  inset-inline-end: 16px;
-  z-index: 2;
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  background: rgba(0, 0, 0, 0.55);
-  color: white;
-  pointer-events: none;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Mobile: stack vertically, thumbs back to row */
-@media (max-width: 639px) {
-  .detail-carousel {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .detail-carousel-thumbs {
-    flex-direction: row;
-    overflow-x: auto;
-    overflow-y: hidden;
-    max-height: none;
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .detail-carousel-thumb {
-    width: 72px;
-    aspect-ratio: 16 / 9;
-    flex: 0 0 auto;
-  }
-
-  .detail-carousel-arrow {
-    opacity: 1;
-    width: 36px;
-    height: 36px;
-  }
-}
-
 /* ─── Facilities & Amenities Page ──────────────────────────── */
 
 .facilities-grid {
@@ -852,6 +689,7 @@
   justify-content: center;
   background: linear-gradient(135deg, var(--color-bg), var(--color-surface-secondary));
   padding: var(--space-4);
+  position: relative;
 }
 
 .admin-login-card {
@@ -859,28 +697,28 @@
   border-radius: var(--radius-xl);
   padding: var(--space-10);
   width: 100%;
-  max-width: 26rem;
+  max-width: 28rem;
   box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  position: relative;
 }
 
 .admin-login-header {
   text-align: center;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
 }
 
-.admin-logo {
-  width: 3.75rem;
-  height: 3.75rem;
-  background: var(--color-primary);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-  font-weight: var(--weight-bold);
-  margin: 0 auto var(--space-3);
-  font-family: var(--font-display);
+.admin-login-brand {
+  text-align: center;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admin-login-logo {
+  max-width: 180px;
+  height: auto;
+  display: inline-block;
 }
 
 .admin-login-title {
@@ -906,7 +744,8 @@
 .admin-login-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  width: 100%;
 }
 
 .admin-input-label {
@@ -914,6 +753,212 @@
   font-size: 0.75rem;
   margin-bottom: var(--space-1);
   color: var(--color-text-secondary);
+}
+
+/* ─── Admin Login Extras ──────────────────────────────────────── */
+
+/* Error banner icon */
+.admin-error-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.admin-error-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.6875rem;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+}
+
+/* Field wrapper */
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Password visibility toggle (flex suffix inside input-field) */
+.admin-password-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+.admin-password-toggle:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-surface-tertiary);
+}
+.admin-password-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.admin-password-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Options row */
+.admin-login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+/* Checkbox label */
+.admin-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  user-select: none;
+  min-height: 2.75rem;
+  padding: var(--space-1) 0;
+}
+.admin-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+  position: relative;
+}
+.admin-checkbox:checked {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+.admin-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  width: 0.3125rem;
+  height: 0.5625rem;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.admin-checkbox:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.admin-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.admin-checkbox-text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Forgot password link */
+.admin-forgot-link {
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) 0;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+.admin-forgot-link:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+.admin-forgot-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Login footer */
+.admin-login-footer {
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+.admin-login-footer-icon {
+  font-size: 0.75rem;
+}
+
+/* Mobile responsive for the login card */
+@media (max-width: 639px) {
+  .admin-login-card {
+    padding: var(--space-6);
+  }
+  .admin-login-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
+  }
+  .admin-login-logo {
+    max-width: 140px;
+  }
+  .admin-login-title {
+    font-size: 1.125rem;
+  }
+  .admin-login-subtitle {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Theme toggle button on login page */
+.admin-login-theme-toggle {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  z-index: 10;
+  transition: color var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
+  box-shadow: var(--shadow-xs);
+}
+.admin-login-theme-toggle:hover {
+  color: var(--color-text);
+  background: var(--color-surface-secondary);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ─── RTL Adjustments ────────────────────────────────────────── */

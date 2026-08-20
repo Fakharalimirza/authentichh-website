@@ -1,119 +1,250 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, X, Eye } from 'lucide-react';
 import { adminApi } from '../../utils/api';
-import AdminSidebar from '../../components/AdminSidebar';
-import Button from '../../components/ui/Button';
-import Badge from '../../components/ui/Badge';
+import Button from '../../components/public/Button';
+import Badge from '../../components/public/Badge';
+import { useAdminToast } from '../../hooks/useAdminToast';
+import AdminTablePage from '../../components/admin/AdminTablePage';
+
+const STATUS_OPTIONS = [
+  { value: '', label: 'All Statuses' },
+  { value: 'new', label: 'New' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'in_discussion', label: 'In Discussion' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'converted_to_listing', label: 'Converted to Listing' },
+];
+
+const ALL_STATUSES = ['new', 'contacted', 'in_discussion', 'approved', 'rejected', 'converted_to_listing'];
+
+function statusVariant(s) {
+  const map = {
+    new: 'accent',
+    contacted: 'primary',
+    in_discussion: 'warning',
+    approved: 'success',
+    rejected: 'error',
+    converted_to_listing: 'success',
+  };
+  return map[s] || 'default';
+}
+
+function formatLabel(s) {
+  return s.replace(/_/g, ' ');
+}
 
 export default function AdminLandlordRequests() {
   const [requests, setRequests] = useState([]);
-  const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const toast = useAdminToast();
 
-  const fetchRequests = () => {
-    adminApi.get('/landlord-requests')
-      .then(r => setRequests(r.data))
-      .catch(() => navigate('/admin/login'))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { fetchRequests(); }, []);
-
-  const updateStatus = async (id, status) => {
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
     try {
-      await adminApi.put(`/landlord-requests/${id}/status`, { status });
+      const params = {};
+      if (search) params.q = search;
+      if (status) params.status = status;
+      const res = await adminApi.get('/landlord-requests', { params });
+      setRequests(res.data);
+    } catch {
+      toast.error('Failed to load landlord requests');
+    } finally {
+      setLoading(false);
+    }
+  }, [search, status]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const updateStatus = async (id, newStatus) => {
+    try {
+      await adminApi.put(`/landlord-requests/${id}/status`, { status: newStatus });
+      toast.success(`Status updated to ${formatLabel(newStatus)}`);
       fetchRequests();
-      setSelected(null);
-    } catch (err) {
-      alert('Failed to update status');
+      if (selected && selected.id === id) {
+        setSelected({ ...selected, status: newStatus });
+      }
+    } catch {
+      toast.error('Failed to update status');
     }
   };
 
-  const statusVariant = (status) => {
-    const map = {
-      new: 'accent', contacted: 'primary', in_discussion: 'warning',
-      approved: 'success', rejected: 'error', converted_to_listing: 'success',
-    };
-    return map[status] || 'default';
+  const openPanel = (r) => {
+    setSelected(r);
+    setPanelOpen(true);
+  };
+
+  const closePanel = () => {
+    setPanelOpen(false);
+    setTimeout(() => setSelected(null), 300);
   };
 
   return (
-    <div className="admin-layout">
-      <AdminSidebar />
-      <div className="admin-main">
-        <div className="admin-header"><h1>Landlord Requests</h1></div>
+    <>
+      <AdminTablePage
+        title="Landlord Requests"
+        loading={loading}
+        items={requests}
+        rowKey="id"
+        columns={[
+          { label: 'Date', render: (r) => new Date(r.created_at).toLocaleDateString() },
+          { label: 'Name', render: (r) => <span className="font-medium">{r.full_name}</span> },
+          { label: 'Phone', render: (r) => r.phone },
+          { label: 'Email', render: (r) => r.email },
+          { label: 'Location', render: (r) => r.property_location },
+          { label: 'Type', render: (r) => r.property_type },
+          { label: 'Bedrooms', render: (r) => r.bedrooms },
+          { label: 'Status', render: (r) => <Badge variant={statusVariant(r.status)} size="sm">{formatLabel(r.status)}</Badge> },
+          {
+            label: 'Action',
+            render: (r) => (
+              <Button variant="ghost" size="sm" onClick={() => openPanel(r)}>
+                <Eye size={14} />
+                <span>View</span>
+              </Button>
+            ),
+          },
+        ]}
+        search={{
+          value: search,
+          placeholder: 'Search by name, email, or location...',
+          onChange: setSearch,
+        }}
+        filters={[
+          {
+            label: 'Status',
+            placeholder: 'All Statuses',
+            value: status,
+            onChange: setStatus,
+            options: STATUS_OPTIONS.slice(1),
+          },
+        ]}
+        empty={{
+          icon: <Search size={28} />,
+          title: 'No landlord requests yet',
+          hint: 'Landlord signup requests will appear here.',
+        }}
+        mobileCard={(r) => ({
+          title: r.full_name || 'Unknown',
+          subtitle: r.property_location || '',
+          meta: [
+            r.property_type && { label: 'Type', value: r.property_type },
+            r.bedrooms && { label: 'Beds', value: r.bedrooms },
+          ].filter(Boolean),
+          status: { label: r.status, variant: statusVariant(r.status) },
+          actions: [
+            { icon: Eye, label: 'View', onClick: () => openPanel(r) },
+          ],
+          onClick: () => openPanel(r),
+        })}
+      />
 
+      {/* Slide Panel */}
+      <div
+        className={`slide-panel-backdrop${panelOpen ? ' open' : ''}`}
+        onClick={closePanel}
+      />
+      <div className={`slide-panel${panelOpen ? ' open' : ''}`}>
         {selected && (
-          <div style={{
-            background: 'var(--color-surface)', borderRadius: 12, padding: 30,
-            marginBottom: 30, border: '1px solid var(--color-border)',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+          <>
+            <div className="slide-panel-header">
               <h2>{selected.full_name}</h2>
-              <Button variant="ghost" size="sm" onClick={() => setSelected(null)}>Close</Button>
+              <button type="button" className="modal-close" onClick={closePanel}>
+                <X size={20} />
+              </button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 15, marginBottom: 20 }}>
-              <div><strong>Phone:</strong> {selected.phone}</div>
-              <div><strong>Email:</strong> {selected.email}</div>
-              <div><strong>Property Location:</strong> {selected.property_location}</div>
-              <div><strong>Building:</strong> {selected.building_name || 'N/A'}</div>
-              <div><strong>Unit:</strong> {selected.unit_number || 'N/A'}</div>
-              <div><strong>Type:</strong> {selected.property_type}</div>
-              <div><strong>Bedrooms:</strong> {selected.bedrooms}</div>
-              <div><strong>Furnishing:</strong> {selected.furnishing_status}</div>
-              <div><strong>Status:</strong> <Badge variant={statusVariant(selected.status)} size="sm">{selected.status.replace(/_/g, ' ')}</Badge></div>
-              <div><strong>Date:</strong> {new Date(selected.created_at).toLocaleDateString()}</div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <div className="text-sm text-muted mb-1">Phone</div>
+                <div className="text-sm font-medium">{selected.phone}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Email</div>
+                <div className="text-sm font-medium">{selected.email}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Property Location</div>
+                <div className="text-sm font-medium">{selected.property_location}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Building Name</div>
+                <div className="text-sm font-medium">{selected.building_name || 'N/A'}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Unit Number</div>
+                <div className="text-sm font-medium">{selected.unit_number || 'N/A'}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Property Type</div>
+                <div className="text-sm font-medium">{selected.property_type}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Bedrooms</div>
+                <div className="text-sm font-medium">{selected.bedrooms}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Furnishing Status</div>
+                <div className="text-sm font-medium">{selected.furnishing_status}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Status</div>
+                <div>
+                  <Badge variant={statusVariant(selected.status)} size="sm">
+                    {formatLabel(selected.status)}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-muted mb-1">Date</div>
+                <div className="text-sm font-medium">
+                  {new Date(selected.created_at).toLocaleDateString()}
+                </div>
+              </div>
             </div>
-            {selected.description && <div><strong>Description:</strong><p style={{ marginTop: 5, color: 'var(--color-text-secondary)' }}>{selected.description}</p></div>}
-            {selected.message && <div><strong>Message:</strong><p style={{ marginTop: 5, color: 'var(--color-text-secondary)' }}>{selected.message}</p></div>}
-            <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {['new', 'contacted', 'in_discussion', 'approved', 'rejected', 'converted_to_listing'].map(s => (
-                <Button key={s} variant={selected.status === s ? 'primary' : 'ghost'} size="sm" onClick={() => updateStatus(selected.id, s)}>
-                  {s.replace(/_/g, ' ')}
+
+            {selected.description && (
+              <div className="mb-6">
+                <div className="text-sm font-semibold mb-2">Description</div>
+                <div className="text-sm text-secondary leading-relaxed p-4" style={{ background: 'var(--color-bg)', borderRadius: 'var(--radius-md)' }}>
+                  {selected.description}
+                </div>
+              </div>
+            )}
+
+            {selected.message && (
+              <div className="mb-6">
+                <div className="text-sm font-semibold mb-2">Message</div>
+                <div className="text-sm text-secondary leading-relaxed p-4" style={{ background: 'var(--color-bg)', borderRadius: 'var(--radius-md)' }}>
+                  {selected.message}
+                </div>
+              </div>
+            )}
+
+            <div className="divider mb-6" />
+
+            <div className="mb-2 text-sm font-semibold">Update Status</div>
+            <div className="flex flex-wrap gap-2">
+              {ALL_STATUSES.map((s) => (
+                <Button
+                  key={s}
+                  variant={selected.status === s ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => updateStatus(selected.id, s)}
+                >
+                  {formatLabel(s)}
                 </Button>
               ))}
             </div>
-          </div>
+          </>
         )}
-
-        <div className="admin-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Location</th>
-                <th>Type</th>
-                <th>Bedrooms</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan="9" style={{ textAlign: 'center', padding: 40 }}>Loading...</td></tr>
-              ) : requests.length === 0 ? (
-                <tr><td colSpan="9" style={{ textAlign: 'center', padding: 40 }}>No landlord requests yet.</td></tr>
-              ) : requests.map(r => (
-                <tr key={r.id}>
-                  <td>{new Date(r.created_at).toLocaleDateString()}</td>
-                  <td style={{ fontWeight: 500 }}>{r.full_name}</td>
-                  <td>{r.phone}</td>
-                  <td>{r.email}</td>
-                  <td>{r.property_location}</td>
-                  <td>{r.property_type}</td>
-                  <td>{r.bedrooms}</td>
-                  <td><Badge variant={statusVariant(r.status)} size="sm">{r.status.replace(/_/g, ' ')}</Badge></td>
-                  <td><Button variant="ghost" size="sm" onClick={() => setSelected(r)}>View</Button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </div>
-    </div>
+    </>
   );
 }

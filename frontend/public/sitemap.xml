@@ -5,9 +5,17 @@
   <url><loc>https://authenticholidayhomes.ae/about</loc><priority>0.7</priority></url>
   <url><loc>https://authenticholidayhomes.ae/facilities</loc><priority>0.6</priority></url>
   <url><loc>https://authenticholidayhomes.ae/list-your-property</loc><priority>0.7</priority></url>
-  <url><loc>https://authenticholidayhomes.ae/gallery</loc><priority>0.6</priority></url>
-  <url><loc>https://authenticholidayhomes.ae/reviews</loc><priority>0.6</priority></url>
+
   <url><loc>https://authenticholidayhomes.ae/contact</loc><priority>0.8</priority></url>
   <url><loc>https://authenticholidayhomes.ae/terms</loc><priority>0.4</priority></url>
   <url><loc>https://authenticholidayhomes.ae/privacy</loc><priority>0.4</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/jumeirah-village-circle</loc><priority>0.8</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/al-jaddaf</loc><priority>0.8</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/business-bay</loc><priority>0.8</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/downtown-dubai</loc><priority>0.8</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/azizi-riviera</loc><priority>0.8</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/dubai-sports-city</loc><priority>0.8</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/dubai-marina</loc><priority>0.8</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/palm-jumeirah</loc><priority>0.8</priority></url>
+  <url><loc>https://authenticholidayhomes.ae/areas/holiday-homes-vs-traditional-rental</loc><priority>0.9</priority></url>
 </urlset>
