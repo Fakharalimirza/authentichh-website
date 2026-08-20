@@ -19,7 +19,7 @@ files: ["backend/server.js", "backend/routes/", "backend/controllers/", "backend
 /api/property-enquiries  → enquiryRoutes (public)
 /api/contact             → contactRoutes (public)
 /api/reviews             → reviewsRoutes (public)
-/api/sitemap.xml         → sitemap endpoint
+/sitemap.xml             → static sitemap (frontend/public, Vite static)
 
 /api/admin               → authRoutes (login, /me)
 /api/admin/properties    → propertyRoutes (admin, auth required)
@@ -104,7 +104,7 @@ Public routes skip auth. Admin routes use `authenticateToken` middleware. POST o
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | `{ status: 'ok', timestamp }` |
-| GET | `/api/sitemap.xml` | Dynamic XML sitemap |
+| GET | `/sitemap.xml` | Static XML sitemap served from `frontend/public/sitemap.xml` (via Vite static hosting; public pages only — no admin paths) |
 
 ---
 
