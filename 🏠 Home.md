@@ -33,6 +33,7 @@ files: []
 | [[Design System]] | Color tokens, typography, spacing, shadows, breakpoints |
 | [[Component Library]] | Button, Card, Badge, PropertyCard, Reviews + shared/admin components |
 | [[Setup & Commands]] | Dev servers, build, XAMPP, env config, common fixes |
+| [[Deployment]] | cPanel VPS deploy: Node.js App + MySQL + .htaccess + SSL |
 
 ### Data & API
 | Note | Description |

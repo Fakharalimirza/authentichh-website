@@ -47,6 +47,32 @@ files: []
 | `/api/reviews` | `backend/routes/reviews.js` → `backend/controllers/reviewsController.js` | Google Reviews (cache + OAuth) |
 | `/sitemap.xml` + `/api/sitemap.xml` | `backend/routes/sitemap.js` → `backend/controllers/sitemapController.js` | Dynamic XML sitemap — static public pages + published listings (`listings.status = 'published'` → `/apartments/:slug`) + published area articles (`area_articles.published = 1`); excludes all admin/private paths; `SITE_URL` env overrides base URL; XML-escapes slugs |
 
+---
+
+## Root Docs
+
+| File | Purpose |
+|------|---------|
+| `🏠 Home.md` | Vault hub/MOC — Quick Links, file layout, at-a-glance |
+| `File Map.md` | ⭐ Feature → file → function index (read first) |
+| `Tech Stack.md` | All technologies, versions, conventions |
+| `Design System.md` | CSS variables, tokens, breakpoints |
+| `Component Library.md` | Button, Card, Badge, PropertyCard + shared/admin components |
+| `Setup & Commands.md` | Dev environment, common commands |
+| `Deployment.md` | cPanel VPS deploy guide: Node.js App + MySQL + .htaccess |
+| `Database.md` | MySQL schema, 16 tables, seed data |
+| `Backend API.md` | All backend endpoints |
+| `Units & Listings.md` | Units ↔ listings split, multi-owner, renewal |
+| `Admin Panel.md` | Admin routes, Smart Scan, settings |
+| `OCR System.md` | OCR pipeline (Gemini → OCR.space → regex) |
+| `Document Fields.md` | What every scanned document extracts |
+| `Pages.md` | Public + admin routes |
+| `Design Decisions.md` | Architectural and UX decisions |
+| `Session Log.md` | Chronological change record |
+| `master-task-list.md` | Master feature task list |
+| `TEAM.md` | Agent roles + delegation workflow |
+| `AGENTS.md` | Agent instructions / project conventions |
+
 ## Backend — Utilities
 
 | File | Purpose |
