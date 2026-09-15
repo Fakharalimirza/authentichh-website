@@ -11,6 +11,24 @@ files: [backend/.env, frontend/public/robots.txt, frontend/public/sitemap.xml]
 
 ---
 
+## Auto-Deploy (recommended — push to master = live)
+
+GitHub is the single source of truth (`Fakharalimirza/authentichh-website`, branch **`master`**).
+Two workflows in `.github/workflows/` connect it to the VPS — no manual upload, no FTP.
+
+| Workflow | Trigger | What it does |
+|----------|---------|--------------|
+| `deploy.yml` | push → `master` | SSH → `reset --hard origin/master` → backend `npm ci` → safe idempotent migration(s) → frontend `npm ci` + `vite build` → copy `dist` to docroot → `.htaccess` deny-block → Passenger restart → health-checks |
+| `build-check.yml` | PR → `master` | Same build on GitHub runners, no deploy — broken code is caught before merge |
+
+**Secrets** (repo Settings → Secrets → Actions): `CPANEL_SSH_KEY` (ed25519 private), `CPANEL_HOST`, `CPANEL_USER`, `APP_PORT` (Node app port for health-check).
+
+**Safety:** restart happens only after a successful build — green run = live (~2–3 min), red run = previous build keeps serving. Rollback = `git revert` + push. Destructive DB migrations are never auto-run.
+
+**Manual steps below remain the fallback** (first-time server setup, disaster recovery).
+
+---
+
 ## Architecture
 
 ```

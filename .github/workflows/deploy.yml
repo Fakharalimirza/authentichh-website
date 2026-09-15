@@ -1,0 +1,85 @@
+name: Deploy to cPanel VPS (test)
+
+# Single source of truth: whatever is on master is what the test site runs.
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          APP_ROOT: /home/jadetude/test.authenticholidayhomes.ae
+          BACKEND_DIR: /home/jadetude/test.authenticholidayhomes.ae/backend
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: 22
+          envs: APP_ROOT,BACKEND_DIR
+          script: |
+            set -e
+            echo "=== 1/7 Sync code ==="
+            if [ ! -d "$APP_ROOT/.git" ]; then
+              git clone -b master git@github.com:Fakharalimirza/authentichh-website.git "$APP_ROOT"
+            fi
+            cd "$APP_ROOT"
+            git fetch origin master
+            git reset --hard origin/master
+            # .env, backend/uploads/, .htaccess are untracked → survive reset
+
+            echo "=== 2/7 Backend deps ==="
+            cd "$BACKEND_DIR"
+            source /home/jadetude/nodevenv/test.authenticholidayhomes.ae/backend/20/bin/activate
+            npm ci --omit=dev
+
+            echo "=== 3/7 Safe idempotent migrations (never destructive) ==="
+            node run-document-number-migration.js
+
+            echo "=== 4/7 Frontend build ==="
+            cd "$APP_ROOT/frontend"
+            npm ci
+            npx vite build
+
+            echo "=== 5/7 Publish dist to docroot ==="
+            cp -r "$APP_ROOT/frontend/dist/." "$APP_ROOT/"
+
+            echo "=== 6/7 Harden .htaccess (append-if-missing) ==="
+            HTACCESS="$APP_ROOT/.htaccess"
+            touch "$HTACCESS"
+            if ! grep -q "AHH-DENY-BLOCK" "$HTACCESS"; then
+              cat >> "$HTACCESS" <<'EOF'
+
+            # BEGIN AHH-DENY-BLOCK (auto-deploy managed — do not remove)
+            <Files ".env">
+              Require all denied
+            </Files>
+            RewriteRule ^backend/ - [F,L]
+            RewriteRule ^\.git/ - [F,L]
+            RewriteRule \.sql$ - [F,L]
+            # END AHH-DENY-BLOCK
+            EOF
+            fi
+
+            echo "=== 7/7 Restart Passenger ==="
+            mkdir -p "$BACKEND_DIR/tmp"
+            touch "$BACKEND_DIR/tmp/restart.txt"
+
+      - name: Health check — API
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.CPANEL_HOST }}
+          username: ${{ secrets.CPANEL_USER }}
+          key: ${{ secrets.CPANEL_SSH_KEY }}
+          port: 22
+          script: |
+            sleep 15
+            curl -sf "http://127.0.0.1:${{ secrets.APP_PORT }}/api/health" | grep -q '"status":"ok"'
+
+      - name: Health check — site + sitemap
+        run: |
+          curl -sf -o /dev/null https://test.authenticholidayhomes.ae/
+          curl -sf https://test.authenticholidayhomes.ae/sitemap.xml | grep -q "<urlset"
