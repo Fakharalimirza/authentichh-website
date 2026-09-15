@@ -82,7 +82,10 @@ jobs:
             DOCROOT=/home/jadetude/test.authenticholidayhomes.ae
             # Probe the same target Apache proxies to (proven working via public
             # traffic) — fall back to APP_PORT secret if .htaccess has no proxy rule.
-            PROXY_PORT=$(grep -oE "(127\.0\.0\.1|localhost):[0-9]+" "$DOCROOT/.htaccess" 2>/dev/null | head -1 | grep -oE "[0-9]+$")
+            PROXY_PORT=$(grep -i "api" "$DOCROOT/.htaccess" 2>/dev/null | grep -oE "(127\.0\.0\.1|localhost):[0-9]+" | head -1 | grep -oE "[0-9]+$")
+            if [ -z "$PROXY_PORT" ]; then
+              PROXY_PORT=$(grep -oE "(127\.0\.0\.1|localhost):[0-9]+" "$DOCROOT/.htaccess" 2>/dev/null | head -1 | grep -oE "[0-9]+$")
+            fi
             PORT="${PROXY_PORT:-${{ secrets.APP_PORT }}}"
             echo "probing 127.0.0.1:$PORT (htaccess=${PROXY_PORT:-none})"
             # Retry ~70s: Passenger cold starts are slow on shared VPS.
