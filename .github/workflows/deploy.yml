@@ -41,9 +41,10 @@ jobs:
 
             echo "=== 4/7 Frontend build ==="
             cd "$APP_ROOT/frontend"
-            # cPanel nodevenv exports NODE_ENV=production, which makes npm skip
-            # devDependencies (vite lives there) — force dev deps for the build.
-            NODE_ENV=development npm ci
+            # cPanel nodevenv forces omit=dev (via NODE_ENV=production and/or npm
+            # config), which skips devDependencies — but vite lives there.
+            # --include=dev overrides any omit setting. Backend keeps --omit=dev.
+            npm ci --include=dev
             npx vite build
 
             echo "=== 5/7 Publish dist to docroot ==="
