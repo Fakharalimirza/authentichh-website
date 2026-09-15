@@ -79,8 +79,21 @@ jobs:
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: 22
           script: |
-            sleep 15
-            curl -sf "http://127.0.0.1:${{ secrets.APP_PORT }}/api/health" | grep -q '"status":"ok"'
+            # Retry ~70s: Passenger cold starts are slow on shared VPS.
+            for i in 1 2 3 4 5 6 7; do
+              CODE=$(curl -s -o /tmp/ahh-health.json -w "%{http_code}" "http://127.0.0.1:${{ secrets.APP_PORT }}/api/health" || echo "000")
+              echo "attempt $i: HTTP $CODE"
+              if [ "$CODE" = "200" ] && grep -q '"status":"ok"' /tmp/ahh-health.json; then
+                echo "API healthy"
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "--- response body (if any) ---"
+            cat /tmp/ahh-health.json 2>/dev/null || echo "(no response body — connection refused?)"
+            echo "--- passenger log tail ---"
+            tail -30 /home/jadetude/logs/test-auth-backend-passenger.log 2>/dev/null || echo "(log unavailable)"
+            exit 1
 
       - name: Health check — site + sitemap
         run: |
