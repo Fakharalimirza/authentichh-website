@@ -79,9 +79,15 @@ jobs:
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: 22
           script: |
+            DOCROOT=/home/jadetude/test.authenticholidayhomes.ae
+            # Probe the same target Apache proxies to (proven working via public
+            # traffic) — fall back to APP_PORT secret if .htaccess has no proxy rule.
+            PROXY_PORT=$(grep -oE "127\.0\.0\.1:[0-9]+" "$DOCROOT/.htaccess" 2>/dev/null | head -1 | cut -d: -f2)
+            PORT="${PROXY_PORT:-${{ secrets.APP_PORT }}}"
+            echo "probing 127.0.0.1:$PORT (htaccess=${PROXY_PORT:-none})"
             # Retry ~70s: Passenger cold starts are slow on shared VPS.
             for i in 1 2 3 4 5 6 7; do
-              CODE=$(curl -s -o /tmp/ahh-health.json -w "%{http_code}" "http://127.0.0.1:${{ secrets.APP_PORT }}/api/health" || echo "000")
+              CODE=$(curl -s -o /tmp/ahh-health.json -w "%{http_code}" "http://127.0.0.1:$PORT/api/health" || echo "000")
               echo "attempt $i: HTTP $CODE"
               if [ "$CODE" = "200" ] && grep -q '"status":"ok"' /tmp/ahh-health.json; then
                 echo "API healthy"
