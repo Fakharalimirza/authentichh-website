@@ -25,6 +25,10 @@ const sitemapRoutes = require('./routes/sitemap');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Behind cPanel/Apache proxy — trust X-Forwarded-* headers so
+// express-rate-limit sees real client IPs (silences ERR_ERL_UNEXPECTED_X_FORWARDED_FOR).
+app.set('trust proxy', 1);
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   contentSecurityPolicy: {
