@@ -79,18 +79,14 @@ jobs:
           key: ${{ secrets.CPANEL_SSH_KEY }}
           port: 22
           script: |
-            DOCROOT=/home/jadetude/test.authenticholidayhomes.ae
-            # Probe the same target Apache proxies to (proven working via public
-            # traffic) — fall back to APP_PORT secret if .htaccess has no proxy rule.
-            PROXY_PORT=$(grep -i "api" "$DOCROOT/.htaccess" 2>/dev/null | grep -oE "(127\.0\.0\.1|localhost):[0-9]+" | head -1 | grep -oE "[0-9]+$")
-            if [ -z "$PROXY_PORT" ]; then
-              PROXY_PORT=$(grep -oE "(127\.0\.0\.1|localhost):[0-9]+" "$DOCROOT/.htaccess" 2>/dev/null | head -1 | grep -oE "[0-9]+$")
-            fi
-            PORT="${PROXY_PORT:-${{ secrets.APP_PORT }}}"
-            echo "probing 127.0.0.1:$PORT (htaccess=${PROXY_PORT:-none})"
+            HOST=test.authenticholidayhomes.ae
+            # Probe exactly what visitors hit (Apache -> Passenger -> Node), forced
+            # to loopback so the check needs no external DNS. NOTE: probing
+            # 127.0.0.1:<port> directly does NOT work here — Passenger intercepts
+            # listen(), so the app's TCP port is never bound on loopback.
             # Retry ~70s: Passenger cold starts are slow on shared VPS.
             for i in 1 2 3 4 5 6 7; do
-              CODE=$(curl -s -o /tmp/ahh-health.json -w "%{http_code}" "http://127.0.0.1:$PORT/api/health" || echo "000")
+              CODE=$(curl -s -o /tmp/ahh-health.json -w "%{http_code}" --resolve "$HOST:443:127.0.0.1" "https://$HOST/api/health" || echo "000")
               echo "attempt $i: HTTP $CODE"
               if [ "$CODE" = "200" ] && grep -q '"status":"ok"' /tmp/ahh-health.json; then
                 echo "API healthy"
